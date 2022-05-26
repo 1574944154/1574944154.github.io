@@ -1,0 +1,14 @@
+---
+
+title: 嵌入式学习
+---
+
+# 嵌入式linux启动流程(带SPL)
+Rom code -> SPL -> u-boot -> Linux kernel -> file system -> application
+
+# PC的启动流程
+BIOS -> MBR -> GRUB -> kernel
+
+
+
+https://wowothink.com/1e031f74/
