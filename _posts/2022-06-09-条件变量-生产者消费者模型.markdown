@@ -1,0 +1,110 @@
+---
+
+title: 条件变量之生产者消费者模型
+---
+
+
+# 条件变量虚假唤醒
+通常我们会把wait放到while循环，而不用if判断，这是因为条件变量可能产生虚假唤醒，以下代码是消费者生产者模型
+
+```
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/select.h>
+#include <sys/time.h>
+
+
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct Node
+{
+    struct Node *next;
+    int num;
+};
+
+struct Node *head;
+struct Node *tail;
+
+void *consumer(void *args)
+{
+    int id = (int)(long)args;
+    while(1)
+    {
+        pthread_mutex_lock(&mutex);
+
+        while(head->next==NULL)
+        {
+            pthread_cond_wait(&cond, &mutex);
+        }
+        
+        if(tail==head->next) tail = head;
+        struct Node *node = head->next;
+        head->next = node->next;
+        printf("%d consume %d\n", id, node->num);
+        free(node);
+        pthread_mutex_unlock(&mutex);
+    }
+}
+
+void *producter(void *args)
+{
+    int count = 1;
+    
+    while(1)
+    {
+        struct timeval time;
+        time.tv_sec = 0;
+        time.tv_usec = 1000;
+        select(0, NULL, NULL, NULL, &time);
+
+        // sleep(1);
+        // printf("before producter lock\n");
+        struct Node *node = (struct Node*)malloc(sizeof(struct Node));
+        node->num = count++;
+        pthread_mutex_lock(&mutex);
+        printf("product %d\n", node->num);
+
+        node->next = tail->next;
+        tail->next = node;
+        tail = node;
+
+        pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&mutex);
+    }
+}
+
+int main(int argc, char const *argv[])
+{
+
+    pthread_t cpid[10];
+    pthread_t ppid[2];
+
+    head = (struct Node*)malloc(sizeof(struct Node));
+    tail = head;
+    head->next = NULL;
+
+    int i;
+    for(i=0;i<10;i++)
+    {
+        if(pthread_create(&cpid[i], NULL, consumer, (void*)(long)i)<0)
+            printf("create pthread fail\n");
+    }
+
+    for(i=0;i<1;i++)
+    {
+        if(pthread_create(&ppid[i], NULL, producter, NULL)<0)
+            printf("create pthread fail\n");
+    }
+
+    for(i=0;i<1;i++)
+        pthread_join(ppid[i], NULL);
+
+    for(i=0;i<2;i++)
+        pthread_join(cpid[i], NULL);
+    return 0;
+}
+
+```

@@ -3,9 +3,23 @@ title: centos7 yum安装mysql
 ---
 
 
-## rpm -ivh https://repo.mysql.com//mysql80-community-release-el7-6.noarch.rpm
+## 添加仓库
+rpm -ivh https://repo.mysql.com//mysql80-community-release-el7-6.noarch.rpm
 
-## yum install mysql-community-server -y
+
+## 查看仓库
+yum repolist all | grep mysql
+
+## 选择仓库
+yum-config-manager --disable mysql80-community
+yum-config-manager --enable mysql57-community
+
+## 安装服务端
+yum install mysql-community-server -y
+
+## 安装相关开发库
+yum install mysql-community-devel -y
+
 
 
 ## 遇到的问题
